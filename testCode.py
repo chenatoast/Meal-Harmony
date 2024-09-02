@@ -56,6 +56,7 @@ def add_user(user_id, name):
     new_data = model.predict([[user_id]])
     dishes.loc[len(dishes)] = np.clip(new_data[0], 1, 5)
     users[user_id] = name
+    print(f"Account created successfully! Welcome, {name}.")
 
 def validate_user(user_id):
     return user_id in dishes.index
@@ -73,21 +74,43 @@ def get_recommendations(user_id, num_recommendations=5):
 def interact(user_id):
     print(f"Welcome, {users[user_id]}")
     while True:
-        print("\nEnter your choice, enter 99 to exit, or 111 for recommendations.")
-        selection = int(input())
+        print("\nWhat would you like to do?")
+        print("1: Get Recommendations")
+        print("2: Select a Dish")
+        print("3: View Recently Selected Dishes")
+        print("99: Exit\n")
 
-        if selection == 99:
+        choice = input("Enter your choice: ")
+
+        if choice == "99":
+            print("Thank you for using the Food Recommendation System. Goodbye!")
             break
-        elif selection == 111:
+        elif choice == "1":
             recommendations = get_recommendations(user_id)
-            print("You might enjoy:")
+
+            print("We recommend the following dishes:")
             for i, _ in recommendations:
                 print(f"{i}: {dish_names[i]}")
-            selection = int(input("Enter your selection: "))
+
+            selection = int(input("\nEnter the number of your selected dish: "))
             update_data(user_id, selection)
+            
+            print("Your selection has been saved. Enjoy your meal!")
+        elif choice == "2":
+            print("Please enter the number of the dish you want to select:")
+            for i, dish in enumerate(dish_names):
+                print(f"{i}: {dish}")
+
+            selection = int(input("\nEnter the number of your selected dish: "))
+            update_data(user_id, selection)
+
+            print("Your selection has been saved. Enjoy your meal!")
+        elif choice == "3":
+            print("Your recently selected dishes are:")
+            for dish_id in recently_selected.get(user_id, []):
+                print(dish_names[dish_id])
         else:
-            print("\nGreat choice, enjoy your meal.")
-            update_data(user_id, selection)
+            print("Invalid choice. Please try again.")
 
 # Main loop
 while True:
@@ -98,3 +121,4 @@ while True:
         add_user(user_id, name)
     else:
         interact(user_id)
+        break
