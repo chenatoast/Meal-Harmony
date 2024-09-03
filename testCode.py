@@ -6,12 +6,13 @@ from sklearn.linear_model import LinearRegression
 # Load data
 df = pd.read_csv("Food survey.csv")
 
-# Extract dish ratings
-dishes = df.iloc[:, 1:].copy()
+# Set UserID as index and extract dish ratings
+df.set_index('UserID', inplace=True)
+dishes = df.copy()
 dish_names = dishes.columns.values
 
-# Simulated user IDs
-users = {i: str(i) for i in range(36)}
+# Simulate user IDs from the CSV file
+users = {user_id: str(user_id) for user_id in df.index}
 
 # Calculate dish similarity
 dish_similarity = cosine_similarity(dishes.T)
@@ -36,7 +37,7 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
     for i in hood:
         adjustment = 0.5 if dish_similarity[selected_dish][i] < 0.5 else -0.7
         dish_similarity[selected_dish][i] += adjustment
-        dishes.iloc[user_id][i] = np.clip(dishes.iloc[user_id][i] + adjustment, 1, 5)
+        dishes.loc[user_id][i] = np.clip(dishes.loc[user_id][i] + adjustment, 1, 5)
 
     # Track the recently selected dish
     if user_id not in recently_selected:
@@ -48,13 +49,13 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
         recently_selected[user_id].pop(0)
 
 # Train a linear regression model to predict ratings for new users
-x = np.array(df.iloc[:, 1:])
-y = np.array(df.iloc[:, 0]).reshape(-1, 1)
+x = np.array(df)
+y = np.arange(len(df)).reshape(-1, 1) 
 model = LinearRegression().fit(y, x)
 
 def add_user(user_id, name):
     new_data = model.predict([[user_id]])
-    dishes.loc[len(dishes)] = np.clip(new_data[0], 1, 5)
+    dishes.loc[user_id] = np.clip(new_data[0], 1, 5)
     users[user_id] = name
     print(f"Account created successfully! Welcome, {name}.")
 
@@ -62,7 +63,7 @@ def validate_user(user_id):
     return user_id in dishes.index
 
 def get_recommendations(user_id, num_recommendations=5):
-    user_ratings = dishes.iloc[user_id].values
+    user_ratings = dishes.loc[user_id].values
     unrated_dishes = [(i, user_ratings[i]) for i in range(len(user_ratings)) if user_ratings[i] < 3]
     sorted_unrated = sorted(unrated_dishes, key=lambda x: x[1], reverse=True)
     
