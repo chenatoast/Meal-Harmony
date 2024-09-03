@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn.model_selection import train_test_split
 
 # Load data
 df = pd.read_csv("Food survey.csv")
@@ -16,6 +18,22 @@ users = {user_id: str(user_id) for user_id in df.index}
 
 # Calculate dish similarity
 dish_similarity = cosine_similarity(dishes.T)
+
+inventory_df = pd.read_csv('temp_dish_inventory.csv')
+
+ingredient_columns = inventory_df.columns[2:-4].tolist()  # Assuming last four columns are meal times
+meal_time_columns = inventory_df.columns[-4:].tolist()
+
+ingredients = inventory_df[ingredient_columns].values
+meal_times = inventory_df[meal_time_columns].values
+
+X = pd.concat([pd.DataFrame(ingredients), pd.DataFrame(meal_times)], axis=1)
+y = inventory_df['Item_id']  
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
 
 # Dictionary to track recently selected dishes for each user
 recently_selected = {}
@@ -93,7 +111,23 @@ def get_recommendations(user_id, num_recommendations=5):
     # Exclude recently selected dishes from recommendations
     recommendations = [(i, score) for i, score in sorted_unrated if i not in recently_selected.get(user_id, [])]
     
+    # Filter recommendations based on available ingredients and meal time
+    available_ingredients = np.random.choice([0, 1], len(ingredient_columns))
+    meal_time = np.random.choice([0, 1], len(meal_time_columns))  
+    recommendations = filter_recommendations_by_ingredients_and_time(recommendations, available_ingredients, meal_time)
+
     return recommendations[:num_recommendations]
+
+def filter_recommendations_by_ingredients_and_time(recommendations, available_ingredients, meal_time):
+    filtered_recommendations = []
+
+    for i, score in recommendations:
+        dish_ingredients = ingredients[i]
+        dish_meal_times = meal_times[i]
+        if all(dish_ingredients <= available_ingredients) and any(dish_meal_times == meal_time):
+            filtered_recommendations.append((i, score))
+            
+    return filtered_recommendations
 
 def interact(user_id):
     print(f"Welcome, {users[user_id]}")
