@@ -35,9 +35,22 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
     hood = select_neighborhood(dish_similarity, selected_dish, neighborhood_size)
 
     for i in hood:
-        adjustment = 0.5 if dish_similarity[selected_dish][i] < 0.5 else -0.7
+        current_rating = dishes.loc[user_id, dish_names[i]]
+        if dish_similarity[selected_dish][i] < 0.5:
+            adjustment = 0.1  # smaller positive adjustment
+        else:
+            # Only apply negative adjustment if the current rating is well above 1.0
+            adjustment = -0.2 if current_rating > 1.2 else 0
         dish_similarity[selected_dish][i] += adjustment
-        dishes.loc[user_id][i] = np.clip(dishes.loc[user_id][i] + adjustment, 1, 5)
+
+        dish_name = dish_names[i] 
+        # print(f"Updating user {user_id}, dish {dish_name}. Current rating: {dishes.loc[user_id, dish_name]}")
+
+        new_rating = np.clip(dishes.loc[user_id, dish_name] + adjustment, 1, 5)
+        new_rating = round(new_rating, 1)
+        dishes.loc[user_id, dish_name] = new_rating
+
+        # print(f"New rating: {new_rating}")
 
     # Track the recently selected dish
     if user_id not in recently_selected:
@@ -47,6 +60,10 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
     # Limit the number of tracked recent dishes (e.g., 3)
     if len(recently_selected[user_id]) > 3:
         recently_selected[user_id].pop(0)
+
+    # Save the updated data to CSV
+    df.loc[user_id] = dishes.loc[user_id]
+    df.to_csv("Food survey.csv")
 
 # Train a linear regression model to predict ratings for new users
 x = np.array(df)
