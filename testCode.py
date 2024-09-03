@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestClassifier 
-from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier 
 
 # Load data
 df = pd.read_csv("Food survey.csv")
@@ -21,19 +20,17 @@ dish_similarity = cosine_similarity(dishes.T)
 
 inventory_df = pd.read_csv('temp_dish_inventory.csv')
 
-ingredient_columns = inventory_df.columns[2:-4].tolist()  # Assuming last four columns are meal times
+ingredient_columns = inventory_df.columns[2:-4].tolist() 
 meal_time_columns = inventory_df.columns[-4:].tolist()
 
 ingredients = inventory_df[ingredient_columns].values
 meal_times = inventory_df[meal_time_columns].values
 
 X = pd.concat([pd.DataFrame(ingredients), pd.DataFrame(meal_times)], axis=1)
-y = inventory_df['Item_id']  
+y = inventory_df['Item_id']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+model = KNeighborsClassifier(n_neighbors=5)
+model.fit(X, y)
 
 # Dictionary to track recently selected dishes for each user
 recently_selected = {}
@@ -56,14 +53,11 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
             adjustment = -0.2 if current_rating > 1.2 else 0
         dish_similarity[selected_dish][i] += adjustment
 
-        dish_name = dish_names[i] 
-        # print(f"Updating user {user_id}, dish {dish_name}. Current rating: {dishes.loc[user_id, dish_name]}")
+        dish_name = dish_names[i]
 
         new_rating = np.clip(dishes.loc[user_id, dish_name] + adjustment, 1, 5)
         new_rating = round(new_rating, 1)
         dishes.loc[user_id, dish_name] = new_rating
-
-        # print(f"New rating: {new_rating}")
 
     # Track the recently selected dish
     if user_id not in recently_selected:
@@ -80,13 +74,13 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
 
 # Train a linear regression model to predict ratings for new users
 x = np.array(df)
-y = np.arange(len(df)).reshape(-1, 1) 
-model = LinearRegression().fit(y, x)
+y = np.arange(len(df)).reshape(-1, 1)
+linear_model = LinearRegression().fit(y, x)
 
 def add_user(user_id, name):
     global dishes
 
-    new_data = model.predict([[user_id]])
+    new_data = linear_model.predict([[user_id]])
     new_ratings = np.clip(new_data[0], 1, 5)
     new_ratings = np.round(new_ratings, 1)
 
@@ -97,7 +91,7 @@ def add_user(user_id, name):
     df.to_csv("Food survey.csv")
 
     users[user_id] = name
-    
+
     print(f"Account created successfully! Welcome, {name}.\n")
 
 def validate_user(user_id):
@@ -107,13 +101,12 @@ def get_recommendations(user_id, num_recommendations=5):
     user_ratings = dishes.loc[user_id].values
     unrated_dishes = [(i, user_ratings[i]) for i in range(len(user_ratings)) if user_ratings[i] < 3]
     sorted_unrated = sorted(unrated_dishes, key=lambda x: x[1], reverse=True)
-    
+
     # Exclude recently selected dishes from recommendations
     recommendations = [(i, score) for i, score in sorted_unrated if i not in recently_selected.get(user_id, [])]
     
-    # Filter recommendations based on available ingredients and meal time
     available_ingredients = np.random.choice([0, 1], len(ingredient_columns))
-    meal_time = np.random.choice([0, 1], len(meal_time_columns))  
+    meal_time = np.random.choice([0, 1], len(meal_time_columns))
     recommendations = filter_recommendations_by_ingredients_and_time(recommendations, available_ingredients, meal_time)
 
     return recommendations[:num_recommendations]
