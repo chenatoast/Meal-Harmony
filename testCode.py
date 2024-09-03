@@ -54,10 +54,21 @@ y = np.arange(len(df)).reshape(-1, 1)
 model = LinearRegression().fit(y, x)
 
 def add_user(user_id, name):
+    global dishes
+
     new_data = model.predict([[user_id]])
-    dishes.loc[user_id] = np.clip(new_data[0], 1, 5)
+    new_ratings = np.clip(new_data[0], 1, 5)
+    new_ratings = np.round(new_ratings, 1)
+
+    new_user_data = pd.Series(new_ratings, index=dishes.columns, name=user_id)
+    dishes = pd.concat([dishes, new_user_data.to_frame().T])
+
+    df.loc[user_id] = new_ratings
+    df.to_csv("Food survey.csv")
+
     users[user_id] = name
-    print(f"Account created successfully! Welcome, {name}.")
+    
+    print(f"Account created successfully! Welcome, {name}.\n")
 
 def validate_user(user_id):
     return user_id in dishes.index
@@ -118,7 +129,7 @@ while True:
     user_id = int(input("Enter your ID: "))
     if not validate_user(user_id):
         print("User doesn't exist, creating account...")
-        name = input("Please enter your username: ")
+        name = input("\nPlease enter your username: ")
         add_user(user_id, name)
     else:
         interact(user_id)
