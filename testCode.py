@@ -20,11 +20,6 @@ dish_similarity = cosine_similarity(dishes.T)
 # Dictionary to track recently selected dishes for each user
 recently_selected = {}
 
-def item_similarity(interaction_matrix):
-    item_interaction_matrix = interaction_matrix.T
-    similarity_matrix = cosine_similarity(item_interaction_matrix)
-    return similarity_matrix
-
 def select_neighborhood(similarity_matrix, item_id, neighborhood_size):
     item_similarity_scores = similarity_matrix[item_id]
     sorted_indices = np.argsort(item_similarity_scores)[::-1]
