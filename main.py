@@ -38,6 +38,7 @@ recently_selected = {}
 user_selected_ingredients = []  
 user_meal_time = []
 
+
 def display_ingredients(): 
     print("\nSelect available ingredients from the list below by entering their index values:")
     for i, ingredient in enumerate(ingredient_columns, start=1):
@@ -49,21 +50,40 @@ def display_ingredients():
     
     return selected_ingredients
 
+
 def ask_meal_time():
+    meal_time_map = {
+        1: 'Breakfast',
+        2: 'Lunch',
+        3: 'Dinner',
+        4: 'Snacks'
+    }
+
     print("\nFor which meal time would you like recommendations?")
-    for i, time in enumerate(meal_time_columns, start=1):
-        print(f"{i}: {time}")
     
-    selected_time = int(input("\nEnter the number corresponding to your meal time: ")) - 1
-    selected_meal_time = [1 if i == selected_time else 0 for i in range(len(meal_time_columns))]
+    # Display meal time options using meal_time_map
+    for num, time in meal_time_map.items():
+        print(f"{num}: {time}")
     
-    return selected_meal_time
+    selected_time = int(input("\nEnter the number corresponding to your meal time: "))
+    
+    # Map the selected number to the corresponding meal time string (e.g., 'Lunch')
+    if selected_time in meal_time_map:
+        selected_meal_time = meal_time_map[selected_time]
+        print(f"You have selected: {selected_meal_time}")  # Debugging to show selected meal time
+    else:
+        print("Invalid selection, defaulting to Lunch")
+        selected_meal_time = 'Lunch'
+    
+    return {selected_meal_time}  # Return the actual meal time string
+
 
 def select_neighborhood(similarity_matrix, item_id, neighborhood_size):
     item_similarity_scores = similarity_matrix[item_id]
     sorted_indices = np.argsort(item_similarity_scores)[::-1]
     neighborhood = sorted_indices[1:neighborhood_size+1]  # Exclude the item itself
     return neighborhood
+
 
 def update_data(user_id, selected_dish, neighborhood_size=5):
     hood = select_neighborhood(dish_similarity, selected_dish, neighborhood_size)
@@ -95,10 +115,12 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
     df.loc[user_id] = dishes.loc[user_id]
     df.to_csv("Food survey.csv")
 
+
 # Train a linear regression model to predict ratings for new users
 x = np.array(df)
 y = np.arange(len(df)).reshape(-1, 1)
 linear_model = LinearRegression().fit(y, x)
+
 
 def add_user(user_id, name):
     global dishes
@@ -117,8 +139,10 @@ def add_user(user_id, name):
 
     print(f"Account created successfully! Welcome, {name}.\n")
 
+
 def validate_user(user_id):
     return user_id in dishes.index
+
 
 def get_recommendations(user_id, num_recommendations=5):
     global user_selected_ingredients, user_meal_time
@@ -132,24 +156,24 @@ def get_recommendations(user_id, num_recommendations=5):
     
     print(f"Recommendations before filtering: {recommendations}")
     
+    # Filter based on ingredients and meal times
     recommendations = filter_recommendations_by_ingredients_and_time(recommendations, user_selected_ingredients, user_meal_time)
 
     return recommendations[:num_recommendations]
 
+
 def filter_recommendations_by_ingredients_and_time(recommendations, available_ingredients, meal_time):
     filtered_recommendations = []
     
-    # Convert available_ingredients to a set for faster lookup
+    # Convert available_ingredients and meal_time to sets for faster lookup
     available_ingredients_set = set(available_ingredients)
-    # Convert meal_time to a set for faster lookup
     meal_time_set = set(meal_time)
-    
-    # Print debug information
-    print(f"Available Ingredients Set: {available_ingredients_set}")
-    print(f"Meal Time Set: {meal_time_set}")
+
+    # print(f"Available Ingredients Set: {available_ingredients_set}")
+    # print(f"Meal Time Set: {meal_time_set}")
     
     for i, score in recommendations:
-        # Get dish ingredients and meal times
+        # Get dish ingredients and meal times from the inventory
         dish_row = inventory_df[inventory_df['Item_id'] == i]
         
         if dish_row.empty:
@@ -169,25 +193,29 @@ def filter_recommendations_by_ingredients_and_time(recommendations, available_in
             if dish_row[meal_time_columns[j]].values[0] == 1
         )
         
-        print(f"Dish {i} Ingredients: {dish_ingredients}")
-        print(f"Dish {i} Meal Times: {dish_meal_times}")
+        # print(f"Dish {i} Ingredients: {dish_ingredients}")
+        # print(f"Dish {i} Meal Times: {dish_meal_times}")
 
         # Check if the dish matches at least 2 ingredients
         ingredient_matches = len(dish_ingredients.intersection(available_ingredients_set))
+
+        # Allow for some flexibility in ingredient matching (e.g., at least 1 instead of 2 matches)
+        # if ingredient_matches < 1:
+        #     print(f"Dish {i} does not meet the ingredient match criteria.")
+        #     continue
         
         # Check if the dish meal times overlap with the selected meal time
-        if 'Lunch' in meal_time_set:  # If lunch is selected
-            meal_time_matches = 'Lunch' in dish_meal_times or 'Dinner' in dish_meal_times
-        else:
-            meal_time_matches = not meal_time_set.isdisjoint(dish_meal_times)
+        meal_time_matches = not meal_time_set.isdisjoint(dish_meal_times)
         
-        print(f"Ingredient Matches: {ingredient_matches}, Meal Time Matches: {meal_time_matches}")
+        if not meal_time_matches:
+            # print(f"Dish {i} does not meet the meal time criteria.")
+            continue
 
         # Add to filtered recommendations if it meets the criteria
-        if ingredient_matches >= 2 and meal_time_matches:
-            filtered_recommendations.append((i, score))
+        filtered_recommendations.append((i, score))
     
     return filtered_recommendations
+
 
 def interact(user_id):
     global user_selected_ingredients, user_meal_time  
