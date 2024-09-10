@@ -5,12 +5,17 @@ plugins {
 
 android {
     namespace = "com.example.test"
-    compileSdk = 33
+    compileSdk = 34
+
+    flavorDimensions += "pyVersion"
+    productFlavors {
+        create("py310") { dimension = "pyVersion" }
+    }
 
     defaultConfig {
         applicationId = "com.example.test"
         minSdk = 28
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -19,6 +24,12 @@ android {
         ndk {
             // On Apple silicon, you can omit x86_64.
             abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/python")
         }
     }
 
@@ -42,4 +53,18 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+}
+chaquopy {
+    defaultConfig {
+        buildPython("C:/Users/mail/AppData/Local/Programs/Python/Python310/python.exe")
+        version = "3.10"
+    }
+
+    productFlavors {
+        getByName("py310") { version = "3.10" }
+    }
+
+    sourceSets {
+
+    }
 }
