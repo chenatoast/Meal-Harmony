@@ -67,12 +67,10 @@ def get_recommendations(user_id, num_recommendations=5):
     sorted_unrated = sorted(unrated_dishes, key=lambda x: x[1], reverse=True)
     
     recommendations = [(i, score) for i, score in sorted_unrated if i not in recently_selected.get(user_id, [])]
+
+    recoms = [(dish_names[i]) for i, _ in recommendations[:num_recommendations]]
     
-    return recommendations[:num_recommendations]
+    return recoms
 
-# Get recommendations for user 35
-recommendations = get_recommendations(user_id)
-
-print("\nWe recommend the following dishes:")
-for i, _ in recommendations:
-    print(f"{i}: {dish_names[i]}")
+def get_recs():
+    return get_recommendations(35)
