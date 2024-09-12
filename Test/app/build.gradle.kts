@@ -45,6 +45,8 @@ android {
     }
 }
 
+
+
 dependencies {
 
     implementation("androidx.appcompat:appcompat:1.7.0")
@@ -58,6 +60,13 @@ chaquopy {
     defaultConfig {
         buildPython("C:/Users/mail/AppData/Local/Programs/Python/Python310/python.exe")
         version = "3.10"
+
+        pip {
+            // A requirement specifier, with or without a version number:
+            install("numpy")
+            install("pandas")
+            install("scikit-learn")
+        }
     }
 
     productFlavors {

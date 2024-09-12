@@ -1,12 +1,16 @@
 package com.example.test;
 
 import androidx.appcompat.app.AppCompatActivity;
-import android.content.SharedPreferences;
+
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 
 public class Home extends AppCompatActivity {
 
@@ -18,6 +22,33 @@ public class Home extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        Button selectADish = findViewById(R.id.but_EnterSelection);
+        Button getRecommendations = findViewById(R.id.but_GetRecommendations);
+        Button viewRecent = findViewById(R.id.but_ViewRecent);
+
+        selectADish.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Home.this, SelectADish.class);
+                startActivity(intent);
+            }
+        });
+
+        getRecommendations.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Home.this, GetRecommendations.class);
+                startActivity(intent);
+            }
+        });
+
+        viewRecent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Home.this, ViewRecentDishes.class);
+                startActivity(intent);
+            }
+        });
 
     }
 }

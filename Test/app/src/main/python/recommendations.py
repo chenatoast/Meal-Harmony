@@ -38,7 +38,7 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
             adjustment = -0.2 if current_rating > 1.2 else 0
         dish_similarity[selected_dish][i] += adjustment
 
-        dish_name = dish_names[i] 
+        dish_name = dish_names[i]
         # print(f"Updating user {user_id}, dish {dish_name}. Current rating: {dishes.loc[user_id, dish_name]}")
 
         new_rating = np.clip(dishes.loc[user_id, dish_name] + adjustment, 1, 5)
@@ -62,7 +62,7 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
 
 # Train a linear regression model to predict ratings for new users
 x = np.array(df)
-y = np.arange(len(df)).reshape(-1, 1) 
+y = np.arange(len(df)).reshape(-1, 1)
 model = LinearRegression().fit(y, x)
 
 def add_user(user_id, name):
@@ -79,7 +79,7 @@ def add_user(user_id, name):
     df.to_csv("Food survey.csv")
 
     users[user_id] = name
-    
+
     print(f"Account created successfully! Welcome, {name}.\n")
 
 def validate_user(user_id):
@@ -89,10 +89,10 @@ def get_recommendations(user_id, num_recommendations=5):
     user_ratings = dishes.loc[user_id].values
     unrated_dishes = [(i, user_ratings[i]) for i in range(len(user_ratings)) if user_ratings[i] < 3]
     sorted_unrated = sorted(unrated_dishes, key=lambda x: x[1], reverse=True)
-    
+
     # Exclude recently selected dishes from recommendations
     recommendations = [(i, score) for i, score in sorted_unrated if i not in recently_selected.get(user_id, [])]
-    
+
     return recommendations[:num_recommendations]
 
 def interact(user_id):
@@ -104,37 +104,37 @@ def interact(user_id):
         print("3: View Recently Selected Dishes")
         print("99: Exit\n")
 
-        choice = input("\nEnter your choice: ")
+        choice = input("Enter your choice: ")
 
         if choice == "99":
-            print("\nThank you for using the Food Recommendation System. Goodbye!")
+            print("Thank you for using the Food Recommendation System. Goodbye!")
             break
         elif choice == "1":
             recommendations = get_recommendations(user_id)
 
-            print("\nWe recommend the following dishes:")
+            print("We recommend the following dishes:")
             for i, _ in recommendations:
                 print(f"{i}: {dish_names[i]}")
 
             selection = int(input("\nEnter the number of your selected dish: "))
             update_data(user_id, selection)
-            
-            print("\nYour selection has been saved. Enjoy your meal!")
+
+            print("Your selection has been saved. Enjoy your meal!")
         elif choice == "2":
-            print("\nPlease enter the number of the dish you want to select:")
+            print("Please enter the number of the dish you want to select:")
             for i, dish in enumerate(dish_names):
                 print(f"{i}: {dish}")
 
             selection = int(input("\nEnter the number of your selected dish: "))
             update_data(user_id, selection)
 
-            print("\nYour selection has been saved. Enjoy your meal!")
+            print("Your selection has been saved. Enjoy your meal!")
         elif choice == "3":
-            print("\nYour recently selected dishes are:")
+            print("Your recently selected dishes are:")
             for dish_id in recently_selected.get(user_id, []):
                 print(dish_names[dish_id])
         else:
-            print("\nInvalid choice. Please try again.")
+            print("Invalid choice. Please try again.")
 
 # Main loop
 while True:
@@ -146,5 +146,3 @@ while True:
     else:
         interact(user_id)
         break
-
-#trial
