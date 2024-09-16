@@ -154,12 +154,18 @@ def get_recommendations(user_id, num_recommendations=5):
     # Exclude recently selected dishes from recommendations
     recommendations = [(i, score) for i, score in sorted_unrated if i not in recently_selected.get(user_id, [])]
     
-    print(f"Recommendations before filtering: {recommendations}")
+    # print(f"Recommendations before filtering: {recommendations}")
     
-    # Filter based on ingredients and meal times
-    recommendations = filter_recommendations_by_ingredients_and_time(recommendations, user_selected_ingredients, user_meal_time)
+    filtered_recommendations = filter_recommendations_by_ingredients_and_time(recommendations, user_selected_ingredients, user_meal_time)
+    
+    if not filtered_recommendations:
+        print("\nNo dishes fully match your available ingredients and selected meal time.")
+        print("Recommending top 3 dishes that can be made with your available ingredients...\n")
+        
+        fallback_recommendations = get_ingredient_match(user_selected_ingredients, user_meal_time)
+        return fallback_recommendations
 
-    return recommendations[:num_recommendations]
+    return filtered_recommendations[:num_recommendations]
 
 
 def filter_recommendations_by_ingredients_and_time(recommendations, available_ingredients, meal_time):
@@ -196,25 +202,51 @@ def filter_recommendations_by_ingredients_and_time(recommendations, available_in
         # print(f"Dish {i} Ingredients: {dish_ingredients}")
         # print(f"Dish {i} Meal Times: {dish_meal_times}")
 
-        # Check if the dish matches at least 2 ingredients
-        ingredient_matches = len(dish_ingredients.intersection(available_ingredients_set))
-
-        # Allow for some flexibility in ingredient matching (e.g., at least 1 instead of 2 matches)
-        # if ingredient_matches < 1:
-        #     print(f"Dish {i} does not meet the ingredient match criteria.")
-        #     continue
+        # Check if all required dish ingredients are available
+        if not dish_ingredients.issubset(available_ingredients_set):
+            # If the user does not have all the required ingredients, skip the dish
+            continue
         
         # Check if the dish meal times overlap with the selected meal time
         meal_time_matches = not meal_time_set.isdisjoint(dish_meal_times)
         
         if not meal_time_matches:
-            # print(f"Dish {i} does not meet the meal time criteria.")
             continue
 
         # Add to filtered recommendations if it meets the criteria
         filtered_recommendations.append((i, score))
     
     return filtered_recommendations
+
+
+def get_ingredient_match(available_ingredients, meal_time):
+    available_ingredients_set = set(available_ingredients)
+    meal_time_set = set(meal_time)
+
+    matching_dishes = []
+    
+    for idx, row in inventory_df.iterrows():
+        dish_ingredients = set(
+            ingredient_columns[j] 
+            for j in range(len(ingredient_columns)) 
+            if row[ingredient_columns[j]] == 1
+        )
+        dish_meal_times = set(
+            meal_time_columns[j] 
+            for j in range(len(meal_time_columns)) 
+            if row[meal_time_columns[j]] == 1
+        )
+        
+        if dish_ingredients.issubset(available_ingredients_set):
+            meal_time_matches = not set(meal_time).isdisjoint(dish_meal_times)
+            
+            # Even if the meal time doesn't match fully, suggest the dish if ingredients match
+            matching_dishes.append((row['Item_id'], meal_time_matches))
+
+    # Sort fallback dishes to show full meal time matches first
+    matching_dishes = sorted(matching_dishes, key=lambda x: x[1], reverse=True)
+    
+    return matching_dishes[:3]
 
 
 def interact(user_id):
@@ -224,11 +256,8 @@ def interact(user_id):
     if not user_selected_ingredients:  
         print("Please select the ingredients you have available:")
         
-        # Display ingredients in a column format with 6 ingredients per column and gaps between columns
         for i in range(0, len(ingredient_columns), 6):
-            # Collecting six ingredients per column
             row = ingredient_columns[i:i+6]
-            # Display the ingredients with two tabs of space between columns
             print("\t\t".join([f"{i+j+1}: {ingredient}" for j, ingredient in enumerate(row)]))
         
         selected_indices = input("\nEnter the numbers of ingredients you have (comma separated): ")
