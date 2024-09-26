@@ -12,6 +12,7 @@ import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class GetRecommendations extends AppCompatActivity {
 
@@ -20,23 +21,9 @@ public class GetRecommendations extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_get_recommendations);
 
-        if (!Python.isStarted()) {
-            Python.start(new AndroidPlatform(this));
-        }
+        FoodRecommendation fr = new FoodRecommendation();
 
-        // Get an instance of Python
-        Python py = Python.getInstance();
-
-        // Call the Python function to get the recommendations
-        PyObject pyObject = py.getModule("recommendations").callAttr("get_recs");
-
-        // Convert the returned list to a Java list
-
-        ArrayList<String> recoms = new ArrayList<>();
-
-        for (PyObject item : pyObject.asList()) {
-            recoms.add(item.toString());
-        }
+        List<String> recoms = fr.getRecs();
 
         Button setRecs = findViewById(R.id.but_Get);
         TextView d1 = findViewById(R.id.tv_dish1);
