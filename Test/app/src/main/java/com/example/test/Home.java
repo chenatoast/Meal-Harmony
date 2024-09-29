@@ -25,6 +25,7 @@ public class Home extends AppCompatActivity {
         Button selectADish = findViewById(R.id.but_EnterSelection);
         Button getRecommendations = findViewById(R.id.but_GetRecommendations);
         Button viewRecent = findViewById(R.id.but_ViewRecent);
+        Button enterIngr = findViewById(R.id.but_enterIngredients);
 
         selectADish.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -46,6 +47,14 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Home.this, ViewRecentDishes.class);
+                startActivity(intent);
+            }
+        });
+
+        enterIngr.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Home.this, EnterIngredients.class);
                 startActivity(intent);
             }
         });
