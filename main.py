@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.linear_model import LinearRegression
 
 # Load data
 df = pd.read_csv("Food survey.csv")
@@ -24,11 +23,6 @@ meal_time_columns = inventory_df.columns[-4:].tolist()
 
 ingredients = inventory_df[ingredient_columns].values
 meal_times = inventory_df[meal_time_columns].values
-
-# Train a linear regression model to predict ratings for new users
-x = np.array(df)
-y = np.arange(len(df)).reshape(-1, 1)
-linear_model = LinearRegression().fit(y, x)
 
 # Dictionary to track recently selected dishes for each user
 recently_selected = {}
@@ -116,9 +110,10 @@ def update_data(user_id, selected_dish, neighborhood_size=5):
 
 def add_user(user_id, name):
     global dishes
-
-    new_data = linear_model.predict([[user_id]])
-    new_ratings = np.clip(new_data[0], 1, 5)
+    
+    ratings_df = df.iloc[:, :]
+    new_data = ratings_df.mean(axis=0).values
+    new_ratings = np.clip(new_data, 1, 5)
     new_ratings = np.round(new_ratings, 1)
 
     new_user_data = pd.Series(new_ratings, index=dishes.columns, name=user_id)
